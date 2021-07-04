@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # attr_accessor for class variable.
 # usage:
 #
@@ -8,5 +10,5 @@
 #   ```
 #
 def class_attr_accessor(symbol)
-    self.class.send(:attr_accessor, symbol)
+  self.class.send(:attr_accessor, symbol)
 end

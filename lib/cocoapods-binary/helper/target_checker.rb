@@ -1,15 +1,14 @@
+# frozen_string_literal: true
 
 module Pod
   class Prebuild
-
     # Check the targets, for the current limitation of the plugin
     #
     # @param [Array<PodTarget>] prebuilt_targets
     def self.check_one_pod_should_have_only_one_target(prebuilt_targets)
+      targets_have_different_platforms = prebuilt_targets.reject { |t| t.pod_name == t.name }
 
-      targets_have_different_platforms = prebuilt_targets.select {|t| t.pod_name != t.name }
-
-      if targets_have_different_platforms.count > 0
+      if targets_have_different_platforms.count.positive?
         names = targets_have_different_platforms.map(&:pod_name)
         raw_names = targets_have_different_platforms.map(&:name)
         message = "Oops, you came across a limitation of cocoapods-binary.
@@ -43,7 +42,5 @@ Related pods: #{names}, target names: #{raw_names}
         raise Informative, message
       end
     end
-
-
   end
 end
