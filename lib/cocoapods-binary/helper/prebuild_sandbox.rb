@@ -4,14 +4,21 @@ require_relative 'names'
 
 module Pod
   class PrebuildSandbox < Sandbox
+    attr_accessor :origin_sandbox
+
     # [String] standard_sandbox_path
     def self.from_standard_sanbox_path(path)
       prebuild_sandbox_path = "#{Pathname.new(path).realpath}_Prebuild"
       new(prebuild_sandbox_path)
     end
 
-    def self.from_standard_sandbox(sandbox)
-      from_standard_sanbox_path(sandbox.root)
+    def self.from_standard_sandbox(origin_sandbox)
+      # from_standard_sanbox_path(sandbox.root)
+      path = Pathname("#{Dir.tmpdir}/cocoapods")
+      path.rmtree if path.exist?
+      sandbox = new(path)
+      sandbox.origin_sandbox = origin_sandbox
+      sandbox
     end
 
     def standard_sanbox_path
@@ -19,7 +26,7 @@ module Pod
     end
 
     def generate_framework_path
-      Pathname("#{root}GeneratedFrameworks")
+      Pathname("#{@origin_sandbox.root.parent}/GeneratedFrameworks")
     end
 
     # @param name [String] pass the target.name (may containing platform suffix)

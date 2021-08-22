@@ -14,9 +14,7 @@ Gem::Specification.new do |spec|
   spec.homepage      = 'https://github.com/leavez/cocoapods-binary'
   spec.license       = 'MIT'
 
-  spec.files         = `git ls-files`.split($/).reject do |f|
-    f.start_with?('test/') || f.start_with?('demo/')
-  end
+  spec.files         = `git ls-files`.split($/).reject{|f| f.start_with?("test/") || f.start_with?('demo/')}
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ['lib']
