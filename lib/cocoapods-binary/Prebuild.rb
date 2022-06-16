@@ -113,7 +113,7 @@ module Pod
       Pod::Prebuild.remove_build_dir(sandbox_path)
       targets.each do |target|
         unless target.should_build?
-          UI.puts "Prebuilding #{target.label}"
+          # UI.puts "Prebuilding #{target.label}"
           next
         end
 
@@ -176,31 +176,31 @@ module Pod
       Pod::Prebuild.remove_build_dir(sandbox_path)
 
       # copy vendored libraries and frameworks
-      # targets.each do |target|
-      #   root_path = sandbox.pod_dir(target.name)
-      #   target_folder = sandbox.framework_folder_path_for_target_name(target.name)
-      #
-      #   # If target shouldn't build, we copy all the original files
-      #   # This is for target with only .a and .h files
-      #   unless target.should_build?
-      #     Prebuild::Passer.target_names_to_skip_integration_framework << target.name
-      #     FileUtils.cp_r(root_path, target_folder, remove_destination: true)
-      #     next
-      #   end
-      #
-      #   target.spec_consumers.each do |consumer|
-      #     file_accessor = Sandbox::FileAccessor.new(root_path, consumer)
-      #     lib_paths = file_accessor.vendored_frameworks || []
-      #     lib_paths += file_accessor.vendored_libraries
-      #     # @TODO dSYM files
-      #     lib_paths.each do |lib_path|
-      #       relative = lib_path.relative_path_from(root_path)
-      #       destination = target_folder + relative
-      #       destination.dirname.mkpath unless destination.dirname.exist?
-      #       FileUtils.cp_r(lib_path, destination, remove_destination: true)
-      #     end
-      #   end
-      # end
+      targets.each do |target|
+        root_path = sandbox.pod_dir(target.name)
+        target_folder = sandbox.framework_folder_path_for_target_name(target.name)
+
+        # If target shouldn't build, we copy all the original files
+        # This is for target with only .a and .h files
+        unless target.should_build?
+          # Prebuild::Passer.target_names_to_skip_integration_framework << target.name
+          # FileUtils.cp_r(root_path, target_folder, remove_destination: true)
+          next
+        end
+
+        target.spec_consumers.each do |consumer|
+          file_accessor = Sandbox::FileAccessor.new(root_path, consumer)
+          lib_paths = file_accessor.vendored_frameworks || []
+          lib_paths += file_accessor.vendored_libraries
+          # @TODO dSYM files
+          lib_paths.each do |lib_path|
+            relative = lib_path.relative_path_from(root_path)
+            destination = target_folder + relative
+            destination.dirname.mkpath unless destination.dirname.exist?
+            FileUtils.cp_r(lib_path, destination, remove_destination: true)
+          end
+        end
+      end
 
       # save the pod_name for prebuild framwork in sandbox
       targets.each do |target|
@@ -240,6 +240,7 @@ module Pod
     define_method(:run_plugins_post_install_hooks) do
       old_method2.bind(self).call
       prebuild_frameworks! if Pod.is_prebuild_stage
+      Process.exit 1
     end
   end
 end
