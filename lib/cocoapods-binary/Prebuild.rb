@@ -203,9 +203,9 @@ module Pod
       end
 
       # save the pod_name for prebuild framwork in sandbox
-      targets.each do |target|
-        sandbox.save_pod_name_for_target target
-      end
+      # targets.each do |target|
+      #   sandbox.save_pod_name_for_target target
+      # end
 
       # Remove useless files
       # remove useless pods
