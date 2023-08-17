@@ -68,43 +68,41 @@ module Pod
       sandbox_path = sandbox.root
       existed_framework_folder = sandbox.generate_framework_path
       bitcode_enabled = Pod::Podfile::DSL.bitcode_enabled
-      targets = []
 
-      if !local_manifest.nil?
+      targets = if !local_manifest.nil?
+                  changes = prebuild_pods_changes
+                  added = changes.added
+                  changed = changes.changed
+                  unchanged = changes.unchanged
+                  deleted = changes.deleted
 
-        changes = prebuild_pods_changes
-        added = changes.added
-        changed = changes.changed
-        unchanged = changes.unchanged
-        deleted = changes.deleted
+                  existed_framework_folder.mkdir unless existed_framework_folder.exist?
+                  exsited_framework_pod_names = sandbox.exsited_framework_pod_names
 
-        existed_framework_folder.mkdir unless existed_framework_folder.exist?
-        exsited_framework_pod_names = sandbox.exsited_framework_pod_names
+                  # additions
+                  missing = unchanged.reject do |pod_name|
+                    exsited_framework_pod_names.include?(pod_name)
+                  end
 
-        # additions
-        missing = unchanged.reject do |pod_name|
-          exsited_framework_pod_names.include?(pod_name)
-        end
+                  root_names_to_update = (added + changed + missing)
 
-        root_names_to_update = (added + changed + missing)
+                  # transform names to targets
+                  cache = []
+                  targets = root_names_to_update.map do |pod_name|
+                    tars = Pod.fast_get_targets_for_pod_name(pod_name, pod_targets, cache)
+                    if (tars.nil? || tars.empty?) && t.nil?
+                      raise "There's no target named (#{pod_name}) in Pod.xcodeproj.\n #{pod_targets.map(&:name)}"
+                    end
 
-        # transform names to targets
-        cache = []
-        targets = root_names_to_update.map do |pod_name|
-          tars = Pod.fast_get_targets_for_pod_name(pod_name, pod_targets, cache)
-          if (tars.nil? || tars.empty?) && t.nil?
-            raise "There's no target named (#{pod_name}) in Pod.xcodeproj.\n #{pod_targets.map(&:name)}"
-          end
+                    tars
+                  end.flatten
 
-          tars
-        end.flatten
-
-        # add the dendencies
-        dependency_targets = targets.map(&:recursive_dependent_targets).flatten.uniq || []
-        targets = (targets + dependency_targets).uniq
-      else
-        targets = pod_targets
-      end
+                  # add the dendencies
+                  dependency_targets = targets.map(&:recursive_dependent_targets).flatten.uniq || []
+                  (targets + dependency_targets).uniq
+              else
+                  pod_targets
+              end
 
       targets = targets.reject { |pod_target| sandbox.local?(pod_target.pod_name) }
 
@@ -152,7 +150,7 @@ module Pod
           end
 
           if Pathname(target_file_path).exist?
-            FileUtils.cp_r(target_file_path, framework_path, remove_destination: true)
+            FileUtils.cp_r(target_file_path, framework_path, remove_destination: true, verbose: true)
           else
             name = target_file_path.split("/")[-1]
             puts "不存在资源#{name}"
@@ -184,7 +182,7 @@ module Pod
         # This is for target with only .a and .h files
         unless target.should_build?
           # Prebuild::Passer.target_names_to_skip_integration_framework << target.name
-          # FileUtils.cp_r(root_path, target_folder, remove_destination: true)
+          FileUtils.cp_r(root_path, target_folder, remove_destination: true, verbose: true)
           next
         end
 
@@ -197,7 +195,7 @@ module Pod
             relative = lib_path.relative_path_from(root_path)
             destination = target_folder + relative
             destination.dirname.mkpath unless destination.dirname.exist?
-            FileUtils.cp_r(lib_path, destination, remove_destination: true)
+            FileUtils.cp_r(lib_path, destination, remove_destination: true, verbose: true)
           end
         end
       end
